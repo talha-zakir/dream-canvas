@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-multipart
+torch
+diffusers
+transformers
+accelerate
+pillow
+numpy
+opencv-python
+protobuf
+sentencepiece
+huggingface_hub
