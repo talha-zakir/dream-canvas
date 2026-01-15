@@ -28,6 +28,7 @@ jobs:
           
           # Initialize a fresh git repo to act as the root
           git init
+          git checkout -b main
           git add .
           git commit -m "Deploy from GitHub: ${{ github.sha }}"
           
