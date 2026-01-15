@@ -31,7 +31,21 @@ export default function Home() {
       window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     } catch (err: any) {
       console.error("Error generating image:", err);
-      setError(err.response?.data?.detail || "Failed to generate image. Is the backend running?");
+
+      let errorMessage = "Failed to generate image.";
+
+      if (err.response) {
+        // Server responded with a status code outside 2xx
+        errorMessage = `Server Error (${err.response.status}): ${err.response.data?.detail || err.response.statusText}`;
+      } else if (err.request) {
+        // Request was made but no response received (CORS or Network Error)
+        errorMessage = "Network Error: No response received from backend. Check URL and CORS.";
+      } else {
+        // Something else happened
+        errorMessage = `Error: ${err.message}`;
+      }
+
+      setError(errorMessage);
     } finally {
       setIsGenerating(false);
     }
