@@ -108,21 +108,30 @@ async def generate_inpainting(
 
         if USE_API_MODE:
             # Use Hugging Face Inference API
-            client = InferenceClient(token=HF_TOKEN)
+            # We explicitly set the model URL to avoid 'StopIteration' provider errors
+            api_url = f"https://api-inference.huggingface.co/models/{MODEL_ID}"
+            client = InferenceClient(model=api_url, token=HF_TOKEN)
             
             # Call the specific SDXL Inpainting model on HF
             try:
+                # Convert PIL to bytes explicitly because the client is picky
+                def to_bytes(img):
+                    buf = io.BytesIO()
+                    img.save(buf, format="PNG")
+                    return buf.getvalue()
+
                 result_image = client.image_to_image(
-                    model=MODEL_ID,
                     prompt=prompt,
-                    image=pil_image, 
-                    mask_image=pil_mask, 
-                    parameters={"strength": 0.99, "num_inference_steps": 25}
+                    image=to_bytes(pil_image), 
+                    mask_image=to_bytes(pil_mask), 
+                    # parameters={"strength": 0.99, "num_inference_steps": 25} 
                 )
             except Exception as hf_error:
-                print(f"Hugging Face API Error: {hf_error}")
-                # Re-raise with a clear message that will be sent to frontend
-                raise HTTPException(status_code=500, detail=f"Hugging Face API Error: {str(hf_error)}")
+                import traceback
+                error_trace = traceback.format_exc()
+                print(f"Hugging Face API Error: {error_trace}")
+                # Re-raise with the full traceback so we can see what's happening
+                raise HTTPException(status_code=500, detail=f"HF API Error: {repr(hf_error)} | Trace: {error_trace[-200:]}")
             # result_image is a PIL Image
             result = result_image
 

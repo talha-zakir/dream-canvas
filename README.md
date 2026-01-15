@@ -16,6 +16,9 @@ This is a monorepo containing both the frontend and backend code.
 
 ### 1. Backend (Hugging Face Spaces)
 The backend runs on Hugging Face Spaces using Docker.
+- **Automation**: Setup via GitHub Actions (`.github/workflows/deploy_to_hf.yml`). Any change to `/hf_space_deployment` is automatically pushed to the Space.
+- **Manual Setup (One-time)**:
+    - Add `HF_TOKEN` to GitHub Repository Secrets.
 - **SDK**: Docker
 - **Hardware**: CPU (Free Tier supported via API Mode)
 - **Environment Variables**:

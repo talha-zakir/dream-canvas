@@ -1,0 +1,36 @@
+name: Sync to Hugging Face Hub
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'hf_space_deployment/**'
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          lfs: true
+      
+      - name: Push to Hub
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # The Hugging Face repo ID: owner/space-name
+          HF_REPO_ID: talhazakir/dream-canvas 
+        run: |
+          git config --global user.email "action@github.com"
+          git config --global user.name "GitHub Action"
+          
+          # Navigate to the deployment folder
+          cd hf_space_deployment
+          
+          # Initialize a fresh git repo to act as the root
+          git init
+          git add .
+          git commit -m "Deploy from GitHub: ${{ github.sha }}"
+          
+          # Force push to the Space (using the HF_TOKEN for auth)
+          # Note: We must use --force because we are rewriting history every time (which is fine for a deployment mirror)
+          git push --force https://talhazakir:$HF_TOKEN@huggingface.co/spaces/$HF_REPO_ID main:main
