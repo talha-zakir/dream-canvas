@@ -1,57 +1,52 @@
-# Pencil-to-Inpaint Prototype
+# Dream Canvas: AI Inpainting
 
-A "Pencil-to-Inpaint" web application where you can upload an image, mask an area with a pencil tool, and use Generative AI to fill it comfortably.
+A "Pencil-to-Inpaint" web application where you can upload an image, mask an area with a pencil tool, and use Generative AI (SDXL) to fill it.
 
-## Project Structure
+![Demo](https://your-demo-image-url.com/placeholder.png)
 
-- **backend/**: FastAPI server handling the AI model (SDXL Inpainting / Flux.1-Fill).
-  - `main.py`: Entry point, loads model, handles API requests.
-  - `image_processing.py`: Handles mask feathering (Gaussian Blur) and resizing.
-- **frontend/**: Next.js application with Fabric.js canvas.
-  - `components/InpaintingCanvas.tsx`: The interactive canvas for drawing masks.
-  - `app/page.tsx`: Main UI.
+## Repository Structure
 
-## Features Implemented
+This is a monorepo containing both the frontend and backend code.
 
-1.  **Feathering**: The backend applies a Gaussian Blur to the uploaded mask (`feather_radius=9`). this ensures that the in-painted area blends smoothly with the original image, avoiding harsh, pixelated edges.
-2.  **Latent Consistency (LCM)**: The FastAPI server is configured to try loading `lcm-lora-sdxl`. This reduces inference steps from ~30-50 to just 4-8, speeding up generation from ~30s to ~3s on supported GPUs.
-3.  **VRAM Optimization**: The model uses `enable_model_cpu_offload()` to offload components to CPU when not in use, allowing SDXL to run on 8GB+ VRAM cards (instead of 12GB+).
+- **`/frontend`**: The Next.js (React) application. Deployed on **Vercel**.
+- **`/backend`**: The FastAPI (Python) server logic.
+- **`/hf_space_deployment`**: A flattened version of the backend ready for **Hugging Face Spaces**.
 
-## Setup Instructions
+## Deployment
 
-### 1. Backend
+### 1. Backend (Hugging Face Spaces)
+The backend runs on Hugging Face Spaces using Docker.
+- **SDK**: Docker
+- **Hardware**: CPU (Free Tier supported via API Mode)
+- **Environment Variables**:
+    - `USE_API_MODE`: `true` (Enables serverless inference proxy)
+    - `HF_TOKEN`: `hf_...` (Your Hugging Face Read Token)
 
-Prerequisites: Python 3.10+ and a GPU (NVIDIA recommended).
+### 2. Frontend (Vercel)
+The frontend runs on Vercel.
+- **Root Directory**: `frontend`
+- **Environment Variables**:
+    - `NEXT_PUBLIC_API_URL`: `https://your-space-name.hf.space`
 
-```bash
-cd backend
-pip install -r requirements.txt
-python main.py
-```
-The server will start at `http://localhost:8000`. On first run, it will download several GBs of model weights.
+## Development
 
-### 2. Frontend
+### Prerequisites
+- Node.js 18+
+- Python 3.10+
 
-Prerequisites: Node.js 18+.
+### Local Setup
+1.  **Backend**:
+    ```bash
+    cd backend
+    pip install -r requirements.txt
+    python main.py
+    ```
+2.  **Frontend**:
+    ```bash
+    cd frontend
+    npm install
+    npm run dev
+    ```
 
-```bash
-cd frontend
-npm install # (If not already installed)
-npm run dev
-```
-Open `http://localhost:3000` in your browser.
-
-## How to Use
-
-1.  Upload an image using the "Upload Image" button.
-2.  Use the mouse to draw (white pencil) over the object you want to change.
-3.  Adjust brush size with the slider if needed.
-4.  Type a prompt (e.g., "a red sports car", "a pile of gold coins").
-5.  Click **Generate**.
-6.  Wait for the AI to dream (check the backend console for progress).
-
-## Technical Implementation Details
-
-- **Mask Handling**: The frontend exports two PNGs: the original image and a binary mask (black background, white drawing).
-- **Backend Processing**: `image_processing.process_mask` applies `cv2.GaussianBlur` to the binary mask. This gradients the edges (gray values), telling the AI to partially preserve the original pixels at the border, creating a seamless transition.
-- **Model**: Default is `diffusers/stable-diffusion-xl-1.0-inpainting-0.1`. You can switch to Flux.1 in `main.py` by uncommenting the `MODEL_ID` line (requires HuggingFace login).
+## License
+MIT
