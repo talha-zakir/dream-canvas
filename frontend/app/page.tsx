@@ -36,7 +36,18 @@ export default function Home() {
 
       if (err.response) {
         // Server responded with a status code outside 2xx
-        errorMessage = `Server Error (${err.response.status}): ${err.response.data?.detail || err.response.statusText}`;
+        // If responseType is 'blob' and there is an error, err.response.data is a Blob.
+        if (err.response.data instanceof Blob) {
+          try {
+            const text = await err.response.data.text();
+            const errorJson = JSON.parse(text);
+            errorMessage = `Server Error (${err.response.status}): ${errorJson.detail || text}`;
+          } catch (e) {
+            errorMessage = `Server Error (${err.response.status}): ${err.response.statusText}`;
+          }
+        } else {
+          errorMessage = `Server Error (${err.response.status}): ${err.response.data?.detail || err.response.statusText}`;
+        }
       } else if (err.request) {
         // Request was made but no response received (CORS or Network Error)
         errorMessage = "Network Error: No response received from backend. Check URL and CORS.";

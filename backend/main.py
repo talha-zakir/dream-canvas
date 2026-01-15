@@ -111,13 +111,18 @@ async def generate_inpainting(
             client = InferenceClient(token=HF_TOKEN)
             
             # Call the specific SDXL Inpainting model on HF
-            result_image = client.image_to_image(
-                model=MODEL_ID,
-                prompt=prompt,
-                image=pil_image, 
-                mask_image=pil_mask, 
-                parameters={"strength": 0.99, "num_inference_steps": 25}
-            )
+            try:
+                result_image = client.image_to_image(
+                    model=MODEL_ID,
+                    prompt=prompt,
+                    image=pil_image, 
+                    mask_image=pil_mask, 
+                    parameters={"strength": 0.99, "num_inference_steps": 25}
+                )
+            except Exception as hf_error:
+                print(f"Hugging Face API Error: {hf_error}")
+                # Re-raise with a clear message that will be sent to frontend
+                raise HTTPException(status_code=500, detail=f"Hugging Face API Error: {str(hf_error)}")
             # result_image is a PIL Image
             result = result_image
 
@@ -151,10 +156,12 @@ async def generate_inpainting(
 
         return Response(content=output_io.getvalue(), media_type="image/png")
 
+    except HTTPException as he:
+        raise he
     except Exception as e:
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Internal Server Error: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=7860, reload=True)
