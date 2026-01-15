@@ -107,32 +107,43 @@ async def generate_inpainting(
         pil_mask = process_mask(pil_mask, feather_radius=9)
 
         if USE_API_MODE:
-            # Use Hugging Face Inference API
-            # We explicitly set the model URL to avoid 'StopIteration' provider errors
-            api_url = f"https://api-inference.huggingface.co/models/{MODEL_ID}"
-            client = InferenceClient(model=api_url, token=HF_TOKEN)
-            
-            # Call the specific SDXL Inpainting model on HF
-            try:
-                # Convert PIL to bytes explicitly because the client is picky
-                def to_bytes(img):
-                    buf = io.BytesIO()
-                    img.save(buf, format="PNG")
-                    return buf.getvalue()
+            # Use Direct HTTP Request to Hugging Face API (Bypassing InferenceClient quirks)
+            import requests
+            import base64
 
-                result_image = client.image_to_image(
-                    prompt=prompt,
-                    image=to_bytes(pil_image), 
-                    mask_image=to_bytes(pil_mask), 
-                    # parameters={"strength": 0.99, "num_inference_steps": 25} 
-                )
-            except Exception as hf_error:
-                import traceback
-                error_trace = traceback.format_exc()
-                print(f"Hugging Face API Error: {error_trace}")
-                # Re-raise with the full traceback so we can see what's happening
-                raise HTTPException(status_code=500, detail=f"HF API Error: {repr(hf_error)} | Trace: {error_trace[-200:]}")
-            # result_image is a PIL Image
+            # Updated API Endpoint (api-inference.huggingface.co is deprecated)
+            api_url = f"https://router.huggingface.co/models/{MODEL_ID}"
+            headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+
+            # Helper to encode bytes to base64 string
+            def encode_base64(img):
+                buf = io.BytesIO()
+                img.save(buf, format="PNG")
+                return base64.b64encode(buf.getvalue()).decode("utf-8")
+
+            # Construct payload
+            # For Inpainting, the API usually expects 'inputs' to be a dict or string, 
+            # but standard diffusers pipeline on Inference API often takes:
+            # { "inputs": "prompt", "image": "b64", "mask_image": "b64" } or inside parameters.
+            
+            # Let's try the standard format for diffusers-based endpoints
+            payload = {
+                "inputs": prompt,
+                "parameters": {
+                    "image": encode_base64(pil_image),
+                    "mask_image": encode_base64(pil_mask),
+                    "strength": 0.99,
+                    "num_inference_steps": 25
+                }
+            }
+
+            response = requests.post(api_url, headers=headers, json=payload)
+            
+            if response.status_code != 200:
+                raise Exception(f"HF API Failed: {response.status_code} - {response.text}")
+            
+            # Response is raw image bytes
+            result_image = Image.open(io.BytesIO(response.content))
             result = result_image
 
         else:

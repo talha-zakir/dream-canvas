@@ -4,6 +4,7 @@ on:
     branches: [main]
     paths:
       - 'hf_space_deployment/**'
+      - '.github/workflows/deploy_to_hf.yml'
 
 jobs:
   sync-to-hub:

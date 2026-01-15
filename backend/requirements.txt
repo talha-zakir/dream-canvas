@@ -1,5 +1,6 @@
 fastapi
 uvicorn
+requests
 python-multipart
 torch
 diffusers
@@ -11,3 +12,4 @@ opencv-python
 protobuf
 sentencepiece
 huggingface_hub
+# Trigger deployment

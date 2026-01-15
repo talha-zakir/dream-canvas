@@ -1,5 +1,6 @@
 fastapi
 uvicorn
+requests
 python-multipart
 torch
 diffusers
@@ -8,6 +9,4 @@ accelerate
 pillow
 numpy
 opencv-python
-protobuf
-sentencepiece
 huggingface_hub
